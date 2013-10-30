@@ -53,24 +53,24 @@ hires
 ' time we have to access the table, thus increasing speed.
 setup
                         mov     dutyReg,#pinAddresses        ' Move the base pin COGRAM address to the dutyReg (sorry for meaningless name, recycled register)
-                        add     dutyReg,#32                  
-                        sub     dutyReg,counter
-                        movd    tableSet,dutyReg            
+                        add     dutyReg,#32                  ' Go to end of table
+                        sub     dutyReg,counter              ' Index backwards based on counter
+                        movd    tableSet,dutyReg             ' Move the register number into the destination for the next instruction
 tableSet
-                        mov     0000,pinTableBase
-                        add     pinTableBase,#4
-                        djnz    counter,#setup                      
+                        mov     0000,pinTableBase            ' Store current HUBRAM address
+                        add     pinTableBase,#4              ' Increment to next 32-bit int
+                        djnz    counter,#setup               ' continue making table       
                         
 dutyStart               
-                        rdlong  dutyReg,pinAddresses
-                        add     dutyTable,dutyReg       wc
-              if_c      or      buffer,pinMask00
+                        rdlong  dutyReg,pinAddresses         ' Read the value of the zero-th pin into the dutyReg
+                        add     dutyTable,dutyReg       wc   ' Add to the accumulator
+              if_c      or      buffer,pinMask00             ' If a carry was generated, set the pin to high
               
-                        rdlong  dutyReg,pinAddresses+1
+                        rdlong  dutyReg,pinAddresses+1       ' repeat this process, each time going to the next pin, and next 
                         add     dutyTable+1,dutyReg       wc
               if_c      or      buffer,pinMask01 
 
-                        rdlong  dutyReg,pinAddresses+2
+                        rdlong  dutyReg,pinAddresses+2       ' This goes on 32 times. Once per pin.
                         add     dutyTable+2,dutyReg       wc
               if_c      or      buffer,pinMask02 
 
@@ -190,11 +190,12 @@ dutyStart
                         add     dutyTable+31,dutyReg       wc
               if_c      or      buffer,pinMask1F 
 
-                        mov     dira,buffer
-                        mov     outa,buffer
-                        xor     buffer,buffer
-                        jmp     #dutyStart
-                          
+                        mov     dira,buffer                     ' Set those pins to output                       
+                        mov     outa,buffer                     ' Write high to the pins set      
+                        xor     buffer,buffer                   ' Clear buffer for next cycle
+                        jmp     #dutyStart                      ' Go to next cycle
+
+' Pin mask table used to set pins                        
 pinMask00     long      %0000_0000_0000_0000_0000_0000_0000_0001
 pinMask01     long      %0000_0000_0000_0000_0000_0000_0000_0010
 pinMask02     long      %0000_0000_0000_0000_0000_0000_0000_0100
@@ -228,12 +229,11 @@ pinMask1D     long      %0010_0000_0000_0000_0000_0000_0000_0000
 pinMask1E     long      %0100_0000_0000_0000_0000_0000_0000_0000
 pinMask1F     long      %1000_0000_0000_0000_0000_0000_0000_0000
 
-dutyReg       res       1
-counter       res       1
-pinTableBase  res       1
-lock          res       1
-buffer        res       1
-pinAddresses  res       32
-dutyTable     res       32        
+dutyReg       res       1    ' Register that duty cycle gets read into
+counter       res       1    ' Counter for generating the address table
+pinTableBase  res       1    ' HUBRAM address of pin addresses
+buffer        res       1    ' Bitmask buffer
+pinAddresses  res       32   ' Table of HUBRAM addresses
+dutyTable     res       32   ' Table of accumulators for each pins duty cycle     
                         FIT
                         
