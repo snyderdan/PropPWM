@@ -33,19 +33,21 @@ DAT
 ' If you write 50% to a pin, the smallest fractional representation is 1/2
 ' meaning that every two cycles will be a complete duty cycle, with 1 on, and 
 ' one off, resulting in a PWM frequency of ~75 kHz. If, however, you write
-' the value 51%, the smallest accurate representation is about 21/41. This means
-' That the pin will be on for 21 cycles, and off for 20 cycles. This gives a PWM
-' frequency of 1.5 kHz. Although for a perfect representation, the duty cycle
-' will require 100 cycles, with 51 on, 49 off, and a frequency of 615 Hz.
-' But unlike the time proportioning method, this method won't spend 21 cycles
-' straight high, and then 20 cycles low. It will appear to be 50%, as it is
-' very close to that value, and after the extra 1% has added up enough, it will
-' lengthen the time spent high for one cycle, changing the average up time to 51%.
+' the value 52%, the smallest accurate representation is 26/50. This means
+' That the pin will be on for 26 cycles, and off for 25 cycles. But unlike the
+' time proportioning method, this method won't spend 26 steps straight high,
+' and then 25 steps low. It will instead distribute these steps evenly to form
+' baby-duty cycles, which closely represent 52%. For a perfect representation,
+' the duty cycle would be after 50 actual switches and have a frequency of 3 kHz.
+' It will appear to be 50%, as it is very close to that value, and after the extra
+' 2% has added up enough, it will lengthen the time spent high for one step,
+' changing the average time spent high to 52%.
 
                         org     0
 hires
                         mov     counter,#32                  ' Counter used to generate the table of pin HUBRAM addresses
                         mov     pinTableBase,par             ' Move in the HUBRAM address of the pin values table
+                        
 ' Initializes a table containing the HUBRAM address of every pin
 ' in order to avoid having to increment a reference address each
 ' time we have to access the table, thus increasing speed.
