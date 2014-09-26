@@ -10,18 +10,13 @@ PUB Start
   
   cognew(@hires, @PWMTable)
 
-  setPWM(16, 100)
-  setPWM(17, 50)
-  'analogWrite(18, 50050000)
-  'setPWM(18, 25)
-
 PUB analogWrite(pin, value)
 
   PWMTable[pin] := value
 
 PUB setPWM(pin, percent)
 
-  PWMTable[pin] := constant((2**32)/100)*percent
+  PWMTable[pin] := $28F5C28*percent
   
                 
 DAT
