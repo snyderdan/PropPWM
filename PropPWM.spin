@@ -5,9 +5,11 @@ CON
 VAR
 
   long PWMTable[PIN_COUNT]
+  long deltaRef
 
 PUB Start
-  
+
+  deltaAddr := @deltaRef
   cognew(@hires, @PWMTable)
 
 PUB analogWrite(pin, value)
@@ -17,6 +19,11 @@ PUB analogWrite(pin, value)
 PUB setPWM(pin, percent)
 
   PWMTable[pin] := $28F5C28*percent
+
+PUB setFrequency(freq)
+'' setFrequency sets the PWM switching frequency to the specified freq in Hz
+
+  deltaRef := _CLKFREQ / freq  
   
                 
 DAT
@@ -58,6 +65,9 @@ setup
 tableEntry                                   
                         add     0000,pinTableBase 
                         djnz    counter, #setup
+
+                        mov     counter, cnt
+                        add     counter, delta
                         
 dutyStart               
                         rdlong  dutyReg,pinAddress00         ' Read the value of the zero-th pin into the dutyReg
@@ -186,14 +196,23 @@ dutyStart
 
                         rdlong  dutyReg,pinAddress1F
                         add     dutyTable1F,dutyReg       wc
-              if_c      or      buffer,pinMask1F 
+              if_c      or      buffer,pinMask1F
+
+                        rdlong  delta, deltaAddr
+                        waitcnt counter, delta                ' set up a syncronized window
 
                         mov     dira,buffer                     ' Set those pins to output                       
                         mov     outa,buffer                     ' Write high to the pins set      
                         xor     buffer,buffer                   ' Clear buffer for next cycle
                         jmp     #dutyStart                      ' Go to next cycle
 
-' Pin mask table used to set pins                        
+
+' Pin mask table used to set pins
+
+
+delta         long      25000
+deltaAddr     long      0
+                       
 pinMask00     long      %0000_0000_0000_0000_0000_0000_0000_0001
 pinMask01     long      %0000_0000_0000_0000_0000_0000_0000_0010
 pinMask02     long      %0000_0000_0000_0000_0000_0000_0000_0100
